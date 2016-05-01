@@ -1,24 +1,27 @@
 {
-  
-	"name": "application-name",
-  
-	"version": "0.0.1",
-  
-	"private": true,
-  
-	"scripts": {
-    
-		"start": "node app"
-  
-	},
-  
-	"dependencies": {
-    
-		"express": "3.0.0rc2",
-    
-		"jade": "0.27.2"
-,
-		"node-trello": "0.1.2"  
-	}
-
+  "name": "Trello Notes Generator",
+  "version": "1.0",
+  "description": "Prototype to export information from Trello to Excel",
+  "engines": {
+    "node": "10.32"
+  },
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "dependencies": {
+    "express": "3.0.0rc2",
+    "jade": "0.27.2",
+    "node-trello": "0.1.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bastienEichenberger/Trello-Release-Notes-Generator"
+  },
+  "keywords": [
+    "node",
+    "heroku",
+    "express"
+  ],
+  "license": "MIT"
 }
