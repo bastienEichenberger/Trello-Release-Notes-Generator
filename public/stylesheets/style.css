@@ -2,6 +2,7 @@ body {
   padding: 50px;
   font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
   background-color:#F0F0F0;
+  list-style-type: none;
 }
 
 a {

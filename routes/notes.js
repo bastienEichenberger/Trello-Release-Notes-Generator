@@ -1,93 +1,49 @@
 //add trello module
 var Trello = require("node-trello");
 var fs = require('fs');
+var config = require('../config.js');
 
-// ***************************
-//handle request for home page
-// ***************************
 exports.home = function (req, res) {
-    //'home' is the name of the view
-    res.render('home', {title: 'Release Notes Generator'})
+
+    res.render('home', {
+            data: {
+                title: config.title,
+                boards: config.boards,
+                key: config.key
+            }
+        }
+    );
+
 };
 
-// ***************************
-//handle request for list page
-// ***************************
 exports.chooselist = function (req, res) {
-    var api = new Trello(req.body.KeyId, req.body.TokenId);
-    api.get('/1/boards/' + req.body.BoardId + '/lists', function (err, data) {
-        if (err) throw err;
+
+    var api = new Trello(config.key, req.body.token);
+
+    api.get('/1/boards/' + req.body.board + '/lists', function (err, data) {
+
+        if (err) {
+            throw err;
+        }
 
         res.render('lists', {
-            title: 'Release Notes Generator',
-            lists: data,
-            keyid: req.body.KeyId,
-            tokenid: req.body.TokenId
+            data: {
+                title: 'Release Notes Generator',
+                lists: data,
+                keyid: config.key,
+                tokenid: req.body.token
+            }
         })
     });
 
 };
 
-// ***************************
-//handle request for rel notes page
-// ***************************
-exports.generatenotes_backup = function (req, res) {
-    var api = new Trello(req.body.KeyId, req.body.TokenId);
-    api.get('/1/lists/' + req.body.ListId + '/cards', function (err, data) {
-        if (err) throw err;
-
-        //no grouping requested, so return all cards
-        if (req.body.GroupingCheck == 'No') {
-            res.render('releasenotes', {
-                title: 'Release Notes Generator',
-                cards: data,
-                isGrouped: 'No'
-            })
-
-        }
-        else {
-            //variables used for filtered groups
-            var featureColor = req.body.FeatureColor;
-            var fixColor = req.body.FixesColor;
-            var features = new Array();
-            var fixes = new Array();
-            var featureCount = 0;
-            var fixCount = 0;
-
-            //loop through all cards
-            for (var i = 0, j = data.length; i < j; i++) {
-                var card = data[i];
-
-                //look for feature cards and add to array
-                if (card.labels[0] != null && card.labels[0].color == featureColor) {
-                    features[featureCount] = card;
-                    featureCount++;
-                }
-                //look for fix cards and add to array
-                else if (card.labels[0] != null && data[i].labels[0].color == fixColor) {
-                    fixes[fixCount] = data[i];
-                    fixCount++;
-                }
-            }
-
-            //return both arrays of cards
-            res.render('releasenotes', {
-                title: 'Release Notes Generator',
-                featurecards: features,
-                fixcards: fixes,
-                isGrouped: 'Yes'
-            })
-        }
-
-    });
-};
-
-exports.generatenotes = function (req, res) {
+exports.generate_report = function (req, res) {
 
     var api = new Trello(req.body.KeyId, req.body.TokenId);
     api.get('/1/lists/' + req.body.ListId + '/cards', function (err, data) {
 
-        var card, date, transfer, recipient, title, number, type, description, hours, comments, csv, header;
+        var card, my_data, date, transfer, recipient, title, number, type, description, hours, comments, csv, header;
 
 
         if (err) {
@@ -102,17 +58,16 @@ exports.generatenotes = function (req, res) {
         //loop through all cards
         for (var i = 0, j = data.length; i < j; i++) {
 
-
             card = data[i];
 
-            var my_data = extract_line(
+            // get the data between debut and fin
+            my_data = extract_line(
                 card.desc,
                 '------------------------------ debut ----------------------------',
                 '------------------------------ fin --------------------------------'
             );
 
-            console.log(my_data);
-
+            // extract data after title ex date ok: 10.02.2016
             date = extract_line(my_data, 'date ok: ', '\n');
             transfer = extract_line(my_data, 'mode de transfert: ', '\n');
             recipient = extract_line(my_data, 'destinataire: ', '\n');
@@ -123,6 +78,7 @@ exports.generatenotes = function (req, res) {
             hours = extract_line(my_data, 'heures: ', '\n');
             comments = extract_line(my_data, 'commentaires: ', '\n');
 
+            // create a csv line
             var row = date + ',' + transfer + ',' + recipient + ',' + title + ',' + number + ','
                 + type + ',' + description + ',' + hours + ',' + comments + '\n';
 
@@ -132,7 +88,8 @@ exports.generatenotes = function (req, res) {
 
         csv.end();
 
-        csv.on('close', function() {
+        // events listeners
+        csv.on('close', function () {
             res.download(csv.path);
         });
 
@@ -140,8 +97,13 @@ exports.generatenotes = function (req, res) {
 };
 
 
-
-
+/**
+ *
+ * @param string
+ * @param begin_str
+ * @param end_str
+ * @return {string}
+ */
 function extract_line (string, begin_str, end_str) {
 
     var str, begin, end;
